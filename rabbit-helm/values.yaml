@@ -1,0 +1,125 @@
+replicaCount: 3
+
+container:
+  image:
+    name: rabbitmq:3.12-management
+  ports:
+    amqp:
+      containerPort: 5672
+    management:
+      containerPort: 15672
+fullnameOverride: ""
+
+
+ingress:
+  enabled: false
+nameOverride: ""
+nodeSelector: {}
+
+
+persistentVolume:
+  accessMode: ReadWriteOnce
+  enabled: true
+  nodes:
+  - hostname: kind-worker
+    path: /mnt/disks/worker1
+  - hostname: kind-worker2
+    path: /mnt/disks/worker2
+  - hostname: kind-worker3
+    path: /mnt/disks/worker3
+  reclaimPolicy: Delete
+  size: 10Gi
+  storageClass: local-storage
+
+
+podAnnotations: {}
+podSecurityContext: {}
+
+
+rabbitmq:
+  addressType: dns
+  cluster_partition_handling: autoheal
+  clustering:
+    enabled: true
+  config:
+    cluster_formation:
+      k8shost: kubernetes.default.svc.cluster.local
+      node_cleanup_only_log_warning: true
+      peer_discovery_backend: rabbit_peer_discovery_classic_config
+  erlangCookie: lgRJdhxgCe9OmYf
+
+  log_console: true
+
+  node1: rabbit@rabbitmq-release-rabbitmq-0.rabbitmq-release-internal
+  node2: rabbit@rabbitmq-release-rabbitmq-1.rabbitmq-release-internal
+  node3: rabbit@rabbitmq-release-rabbitmq-2.rabbitmq-release-internal
+  
+  password: admin@123
+  username: admin
+
+
+probes:
+  liveness:
+    path: /api/healthchecks/node
+    port: 15672
+    scheme: HTTP
+    initialDelaySeconds: 120
+    periodSeconds: 100
+    timeoutSeconds: 50
+    failureThreshold: 20
+    successThreshold: 1
+
+  readiness:
+    path: /api/healthchecks/node
+    port: 15672
+    scheme: HTTP
+    initialDelaySeconds: 120
+    periodSeconds: 100
+    timeoutSeconds: 50
+    failureThreshold: 20
+    successThreshold: 1
+
+
+resources:
+  limits:
+    cpu: "2"
+    memory: 2Gi
+  requests:
+    cpu: "1"
+    memory: 1Gi
+
+securityContext: {}
+
+service:
+  headless: true
+  internal:
+    port: 5672
+    type: ClusterIP
+  management:
+    port: 15672
+    type: ClusterIP
+
+serviceAccount:
+  annotations: {}
+  create: true
+  name: ""
+
+
+extraVolumes:
+  - name: rabbitmq-init
+    configMap:
+      name: rabbitmq-init
+extraVolumeMounts:
+  - name: rabbitmq-init
+    mountPath: /docker-entrypoint-initdb.d
+    subPath: init.sh
+  
+autoscaling:
+  enabled: false
+  maxReplicas: 100
+  minReplicas: 1
+  targetCPUUtilizationPercentage: 80
+
+affinity: {}
+
+tolerations: []

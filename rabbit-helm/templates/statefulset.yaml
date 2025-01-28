@@ -1,0 +1,122 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ .Release.Name }}-rabbitmq
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: rabbitmq
+  serviceName: {{ .Release.Name }}-internal
+  template:
+    metadata:
+      labels:
+        app: rabbitmq
+    spec:
+      initContainers:
+        - name: set-erlang-cookie-permissions
+          image: busybox
+          command:
+            - sh
+            - -c
+            - |
+              cp /secrets/.erlang.cookie /cookie/.erlang.cookie
+              chmod 400 /cookie/.erlang.cookie
+              chown 999:999 /cookie/.erlang.cookie
+          volumeMounts:
+            - name: rabbitmq-erlang-cookie
+              mountPath: /secrets
+            - name: cookie-dir
+              mountPath: /cookie
+      containers:
+        - name: rabbitmq
+          image: {{ .Values.container.image.name }}
+          ports:
+            - name: amqp
+              containerPort: {{ .Values.container.ports.amqp.containerPort }}
+            - name: management
+              containerPort: {{ .Values.container.ports.management.containerPort }}
+          resources:
+            requests:
+              memory: {{ .Values.resources.requests.memory }}
+              cpu: {{ .Values.resources.requests.cpu }}
+            limits:
+              memory: {{ .Values.resources.limits.memory }}
+              cpu: {{ .Values.resources.limits.cpu }}
+          livenessProbe:
+            exec:
+              command:
+                - /bin/bash
+                - '-ec'
+                - rabbitmqctl status
+            initialDelaySeconds: {{ .Values.probes.liveness.initialDelaySeconds }}
+            periodSeconds: {{ .Values.probes.liveness.periodSeconds }}
+            timeoutSeconds: {{ .Values.probes.liveness.timeoutSeconds }}
+            failureThreshold: {{ .Values.probes.liveness.failureThreshold }}
+            successThreshold: {{ .Values.probes.liveness.successThreshold }}
+          env:
+            - name: RABBITMQ_PLUGINS
+              value: "rabbitmq_management"
+            - name: RABBITMQ_DEFAULT_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-secrets
+                  key: rabbitmq-username
+            - name: RABBITMQ_DEFAULT_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-secrets
+                  key: rabbitmq-password
+            - name: RABBITMQ_ERLANG_COOKIE
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-secrets
+                  key: erlang-cookie
+            - name: RABBITMQ_USE_LONGNAME
+              value: "true"
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: RABBITMQ_NODENAME
+              value: "rabbit@$(POD_NAME).rabbitmq-release-internal"
+            - name: RABBITMQ_CLUSTER_DISCOVERY
+              value: "k8s"
+            - name: RABBITMQ_CLUSTER_DISCOVERY_K8S_HOST
+              value: "kubernetes.default.svc.cluster.local"
+            - name: RABBITMQ_CLUSTER_DISCOVERY_K8S_SERVICE_NAME
+              value: "{{ .Release.Name }}-internal"
+            - name: RABBITMQ_CLUSTER_DISCOVERY_K8S_ADDRESS_TYPE
+              value: "hostname"
+            - name: RABBITMQ_CONFIG_FILE
+              value: "/etc/rabbitmq/rabbitmq.conf"
+          volumeMounts:
+            - name: rabbitmq-data
+              mountPath: /var/lib/rabbitmq
+            - name: rabbitmq-config
+              mountPath: /etc/rabbitmq/rabbitmq.conf
+              subPath: rabbitmq.conf
+            - name: cookie-dir
+              mountPath: /var/lib/rabbitmq/.erlang.cookie
+              subPath: .erlang.cookie
+      volumes:
+        - name: cookie-dir
+          emptyDir: {}
+        - name: rabbitmq-config
+          configMap:
+            name: {{ .Release.Name }}-config
+        - name: rabbitmq-erlang-cookie
+          secret:
+            secretName: {{ .Release.Name }}-secrets
+            items:
+              - key: erlang-cookie
+                path: .erlang.cookie
+  volumeClaimTemplates:
+    - metadata:
+        name: rabbitmq-data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: {{ .Values.persistentVolume.size }}
+        storageClassName: {{ .Values.persistentVolume.storageClass }}

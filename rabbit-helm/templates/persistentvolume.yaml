@@ -1,0 +1,29 @@
+{{- $releaseName := .Release.Name -}}
+{{- range $index, $node := .Values.persistentVolume.nodes }}
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: {{ $releaseName }}-pv-{{ $index }}
+  labels:
+    app: {{ $releaseName }}
+spec:
+  capacity:
+    storage: {{ $.Values.persistentVolume.size }}
+  volumeMode: Filesystem
+  accessModes:
+  - {{ $.Values.persistentVolume.accessMode }}
+  persistentVolumeReclaimPolicy: {{ $.Values.persistentVolume.reclaimPolicy }}
+  storageClassName: {{ $.Values.persistentVolume.storageClass }}
+  local:
+    path: {{ $node.path }}
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+      - matchExpressions:
+          - key: kubernetes.io/hostname
+            operator: In
+            values:
+              - {{ $node.hostname }}
+---
+{{- end }}
+
