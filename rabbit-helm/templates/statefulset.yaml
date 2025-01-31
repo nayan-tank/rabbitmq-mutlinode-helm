@@ -13,6 +13,7 @@ spec:
       labels:
         app: rabbitmq
     spec:
+      serviceAccountName: {{ .Values.serviceAccount.name }}
       initContainers:
         - name: set-erlang-cookie-permissions
           image: busybox

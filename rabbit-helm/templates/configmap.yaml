@@ -10,9 +10,9 @@ data:
     cluster_formation.node_cleanup.only_log_warning = {{ .Values.rabbitmq.config.cluster_formation.node_cleanup_only_log_warning }}
     
     cluster_formation.peer_discovery_backend = {{ .Values.rabbitmq.config.cluster_formation.peer_discovery_backend }}
-    cluster_formation.classic_config.nodes.1 = {{ .Values.rabbitmq.node1 }}
-    cluster_formation.classic_config.nodes.2 = {{ .Values.rabbitmq.node2 }}
-    cluster_formation.classic_config.nodes.3 = {{ .Values.rabbitmq.node3 }}
+    #cluster_formation.classic_config.nodes.1 = {{ .Values.rabbitmq.node1 }}
+    #cluster_formation.classic_config.nodes.2 = {{ .Values.rabbitmq.node2 }}
+    #cluster_formation.classic_config.nodes.3 = {{ .Values.rabbitmq.node3 }}
 
     # Cluster auto-healing
     cluster_partition_handling = {{ .Values.rabbitmq.cluster_partition_handling }}

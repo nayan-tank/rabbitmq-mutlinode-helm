@@ -45,7 +45,8 @@ rabbitmq:
     cluster_formation:
       k8shost: kubernetes.default.svc.cluster.local
       node_cleanup_only_log_warning: true
-      peer_discovery_backend: rabbit_peer_discovery_classic_config
+      #peer_discovery_backend: rabbit_peer_discovery_classic_config
+      peer_discovery_backend: rabbit_peer_discovery_k8s
   erlangCookie: lgRJdhxgCe9OmYf
 
   log_console: true
@@ -54,8 +55,8 @@ rabbitmq:
   node2: rabbit@rabbitmq-release-rabbitmq-1.rabbitmq-release-internal
   node3: rabbit@rabbitmq-release-rabbitmq-2.rabbitmq-release-internal
   
-  password: admin@123
-  username: admin
+  password: guest
+  username: guest
 
 
 probes:
@@ -97,13 +98,19 @@ service:
     type: ClusterIP
   management:
     port: 15672
-    type: ClusterIP
+    type: ClusterIP 
+    
 
 serviceAccount:
-  annotations: {}
-  create: true
-  name: ""
+  name: rabbitmq-sa
 
+role:
+  name: rabbitmq-role
+
+roleBinding:
+  name: rabbitmq-rolebinding
+
+namespace: default 
 
 extraVolumes:
   - name: rabbitmq-init
