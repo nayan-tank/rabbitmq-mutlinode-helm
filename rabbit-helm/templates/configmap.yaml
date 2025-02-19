@@ -14,6 +14,9 @@ data:
     #cluster_formation.classic_config.nodes.2 = {{ .Values.rabbitmq.node2 }}
     #cluster_formation.classic_config.nodes.3 = {{ .Values.rabbitmq.node3 }}
 
+    default_user = {{ .Values.RABBITMQ.username }}
+    default_pass = {{ .Values.RABBITMQ.password }}
+
     # Cluster auto-healing
     cluster_partition_handling = {{ .Values.rabbitmq.cluster_partition_handling }}
 
