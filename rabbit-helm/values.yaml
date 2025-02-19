@@ -55,8 +55,8 @@ rabbitmq:
   node2: rabbit@rabbitmq-release-rabbitmq-1.rabbitmq-release-internal
   node3: rabbit@rabbitmq-release-rabbitmq-2.rabbitmq-release-internal
   
-  password: guest
-  username: guest
+  RABBITMQ.username: admin
+  RABBITMQ.password: admin
 
 
 probes:
